@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI 博多じんぱち｜ロックを解除してください。</title>
+<style>
+:root{color-scheme:dark;--bg:#101722;--panel:#1a2635;--line:#31445a;--cyan:#61dcff;--text:#edf5ff;--muted:#a9bbcf}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#20354a,#101722 65%);color:var(--text);font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif}
+main{width:min(1080px,100%);margin:auto;padding:20px}h1{font-size:clamp(1.35rem,3vw,2rem);margin:0 0 6px}.lead{color:var(--muted);margin:0 0 18px}
+.layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr);gap:18px;align-items:start}.panel{background:rgba(26,38,53,.95);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 12px 35px #0003}
+.screen{position:relative;overflow:hidden;border:2px solid #52667a;border-radius:14px;background:#0b1017}.screen img{display:block;width:100%;aspect-ratio:1;object-fit:cover}.screen:after{content:"";position:absolute;inset:8px;border:1px solid #61dcff55;border-radius:7px;pointer-events:none}
+.status{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:12px 0 0;color:var(--muted);font-size:.9rem}.kana{color:var(--cyan);font-size:2rem;font-weight:800;min-width:2em;text-align:center}
+label{display:block;font-weight:650;margin:0 0 7px}textarea,select{width:100%;background:#0e1722;color:var(--text);border:1px solid #43566b;border-radius:12px;padding:12px;font:inherit}textarea{min-height:145px;resize:vertical;line-height:1.7}
+.controls{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}button{font:inherit;font-weight:700;border:1px solid #4b6279;background:#25384c;color:var(--text);padding:10px 14px;border-radius:10px;cursor:pointer}button.primary{background:#087da2;border-color:#39c5ec;color:white}button:disabled{opacity:.45;cursor:not-allowed}
+.setting{margin-top:15px}.setting-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.setting-head label{margin:0}.setting-head span{font-size:.9rem;color:var(--muted)}input[type=range]{width:100%;accent-color:var(--cyan)}
+.note{font-size:.86rem;color:var(--muted);line-height:1.65;margin:12px 0 0}.sequence{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}.chip{padding:5px 9px;border-radius:8px;background:#0e1722;color:var(--muted);border:1px solid #31445a;font-size:.95rem}.chip.active{background:#064d67;color:white;border-color:var(--cyan)}
+@media(max-width:760px){main{padding:12px}.layout{grid-template-columns:1fr}.panel{padding:12px}.screen img{max-height:58vh;object-fit:contain}}
+</style>
+</head>
+<body><main>
+<h1>わたしは博多じんぱち｜ロックを解除してください</h1>
+<p class="lead">わたしええあいははかたじんぱち。</p>
+<div class="layout">
+<section class="panel">
+<div class="screen"><img id="android" src="mouths/a.png" alt="女性アンドロイドの口形"></div>
+<div class="status"><span id="state">待機中</span><span class="kana" id="currentKana">あ</span><span id="counter">0 / 0</span></div>
+<div class="sequence" id="sequence" aria-label="口形の再生順"></div>
+</section>
+<section class="panel">
+<label for="script">読み上げる文章（ひらがな推奨）</label>
+<textarea id="script">わたしはええあいはかたじんぱち。ろっくをかいじょしてください。</textarea>
+<div class="controls">
+<button class="primary" id="play">▶ 音声＋口形を再生</button>
+<button id="pause" disabled>Ⅱ 一時停止</button>
+<button id="stop" disabled>■ 停止</button>
+</div>
+<div class="setting">
+<label for="voice">日本語の音声</label>
+<select id="voice"><option value="">端末の既定の日本語音声</option></select>
+</div>
+<div class="setting">
+<div class="setting-head"><label for="rate">読み上げ速度</label><span id="rateLabel">1.0x</span></div>
+<input id="rate" type="range" min="0.6" max="1.4" value="1" step="0.1">
+</div>
+<div class="setting">
+<div class="setting-head"><label for="sync">口形切り替え速度</label><span id="syncLabel">標準</span></div>
+<input id="sync" type="range" min="1" max="10" value="5">
+</div>
+<p class="note">音声合成にはブラウザ・端末の日本語音声を使用します。日本語の音声が端末にない場合、音声設定の追加が必要なことがあります。口形は発音の推定に基づく簡易リップシンクで、音素を直接解析する精密な同期ではありません。漢字の読みは自動変換できない場合があるため、ひらがな入力がおすすめです。</p>
+</section></div></main>
+<script>
+const shapes={あ:'mouths/a.png',い:'mouths/i.png',う:'mouths/u.png',え:'mouths/e.png',お:'mouths/o.png',ん:'mouths/n.png'};
+const map={};
+function add(chars,shape){for(const c of chars)map[c]=shape}
+add('あかがさざただなはばぱまやらわぁゃ','あ');
+add('いきぎしじちぢにひびぴみりぃ','い');
+add('うくぐすずつづぬふぶぷむゆるぅゅ','う');
+add('えけげせぜてでねへべぺめれぇ','え');
+add('おこごそぞとどのほぼぽもよろをぉょ','お');
+add('ん','ん');
+add('アカガサザタダナハバパマヤラワァャ','あ');
+add('イキギシジチヂニヒビピミリィ','い');
+add('ウクグスズツヅヌフブプムユルゥュ','う');
+add('エケゲセゼテデネヘベペメレェ','え');
+add('オコゴソゾトドノホボポモヨロヲォョ','お');
+add('ン','ん');
+const $=id=>document.getElementById(id), img=$('android'), textBox=$('script'), state=$('state'), kana=$('currentKana'), counter=$('counter'), seqBox=$('sequence');
+let utterance=null, running=false, paused=false, seq=[], idx=0, mouthTimer=null, startedAt=0, remaining=0, activeVoice=null;
+function makeSeq(text){const a=[];for(const c of text.normalize('NFKC')){if(map[c])a.push({shape:map[c],char:c});else if(/[、。，．！？!?；;：:\s\n]/.test(c))a.push({pause:true,char:c});}return a}
+function renderSeq(){seqBox.innerHTML='';seq.forEach((it,i)=>{const s=document.createElement('span');s.className='chip'+(i===idx?' active':'');s.textContent=it.pause?'間':it.shape;seqBox.appendChild(s)})}
+function show(i){if(!seq.length)return;idx=Math.max(0,Math.min(i,seq.length-1));const it=seq[idx];if(!it.pause){img.src=shapes[it.shape];img.alt='口形 '+it.shape;kana.textContent=it.shape;state.textContent='音声再生中'}[...seqBox.children].forEach((el,j)=>el.classList.toggle('active',j===idx));counter.textContent=`${idx+1} / ${seq.length}`}
+function getDelay(it){const n=Number($('sync').value);return (it.pause?260:Math.max(110,440-(n-1)*31))}
+function startMouthLoop(){clearTimeout(mouthTimer);if(!running||paused)return;const wait=getDelay(seq[idx]||{});mouthTimer=setTimeout(()=>{if(!running||paused)return;if(idx<seq.length-1){show(idx+1);startMouthLoop()}else{ // Keep the final mouth shape until speech finishes.
+  img.src=shapes['ん'];kana.textContent='ん';clearTimeout(mouthTimer);
+}},wait)}
+function populateVoices(){const sel=$('voice'),old=sel.value;sel.innerHTML='<option value="">端末の既定の日本語音声</option>';const vs=window.speechSynthesis? speechSynthesis.getVoices():[];vs.filter(v=>v.lang.toLowerCase().startsWith('ja')).forEach((v,i)=>{const o=document.createElement('option');o.value=v.name;o.textContent=`${v.name}（${v.lang}）`;sel.appendChild(o)});if([...sel.options].some(o=>o.value===old))sel.value=old}
+function resetButtons(){ $('play').disabled=false;$('pause').disabled=true;$('stop').disabled=true;$('pause').textContent='Ⅱ 一時停止'}
+function cleanup(){clearTimeout(mouthTimer);running=false;paused=false;if(window.speechSynthesis)speechSynthesis.cancel();resetButtons()}
+function play(){cleanup();seq=makeSeq(textBox.value);idx=0;if(!seq.some(x=>!x.pause)){state.textContent='ひらがな・カタカナを入力してください';counter.textContent='0 / 0';return}
+renderSeq();show(0);if(!('speechSynthesis' in window)||!('SpeechSynthesisUtterance' in window)){state.textContent='このブラウザは音声読み上げに対応していません';return}
+const speakText=textBox.value.trim();if(!speakText){state.textContent='文章を入力してください';return}
+utterance=new SpeechSynthesisUtterance(speakText);utterance.lang='ja-JP';utterance.rate=Number($('rate').value);const selected=$('voice').value;const voice=speechSynthesis.getVoices().find(v=>v.name===selected);if(voice)utterance.voice=voice;
+utterance.onstart=()=>{running=true;paused=false;$('play').disabled=true;$('pause').disabled=false;$('stop').disabled=false;state.textContent='音声再生中';startMouthLoop()};
+utterance.onboundary=e=>{ // If the browser reports character positions, jump the mouth near the spoken kana.
+ if(!running||paused||typeof e.charIndex!=='number')return;
+ const before=textBox.value.slice(0,e.charIndex);
+ const spoken=makeSeq(before).length;
+ if(spoken<seq.length){show(spoken);startMouthLoop()}
+};
+utterance.onend=()=>{clearTimeout(mouthTimer);running=false;paused=false;img.src=shapes['ん'];kana.textContent='ん';state.textContent='再生完了';resetButtons()};
+utterance.onerror=e=>{clearTimeout(mouthTimer);running=false;state.textContent=e.error==='canceled'?'停止しました':'音声を再生できませんでした';resetButtons()};
+speechSynthesis.speak(utterance)}
+$('play').addEventListener('click',play);
+$('pause').addEventListener('click',()=>{if(!running)return;if(!paused){speechSynthesis.pause();paused=true;clearTimeout(mouthTimer);$('pause').textContent='▶ 再開';state.textContent='一時停止中'}else{speechSynthesis.resume();paused=false;$('pause').textContent='Ⅱ 一時停止';state.textContent='音声再生中';startMouthLoop()}});
+$('stop').addEventListener('click',()=>{cleanup();state.textContent='停止しました';img.src=shapes['ん'];kana.textContent='ん'});
+$('rate').addEventListener('input',()=>{$('rateLabel').textContent=Number($('rate').value).toFixed(1)+'x'});
+$('sync').addEventListener('input',()=>{$('syncLabel').textContent=Number($('sync').value)<4?'ゆっくり':Number($('sync').value)>7?'速い':'標準'});
+if('speechSynthesis'in window){populateVoices();speechSynthesis.onvoiceschanged=populateVoices}
+</script></body></html>
